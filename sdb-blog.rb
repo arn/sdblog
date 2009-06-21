@@ -8,7 +8,7 @@ before do
 end
 
 get '/' do
-  results = @sdb.query('hello', "['epoc_second' > '0'] sort 'epoc_second' desc").first
+  results, @more = @sdb.query('hello', "['epoc_second' > '0'] sort 'epoc_second' desc", '3')
   @posts  = []
 
   results.each do |p|
@@ -22,6 +22,17 @@ post '/' do
   time = Time.now.to_i
   @sdb.put_attributes(@domain, time, params.merge!({'epoc_second' => time}))
   redirect '/'
+end
+
+get '/page/:id' do
+  results, @more = @sdb.query('hello', "['epoc_second' > '0'] sort 'epoc_second' desc", '3', "#{params[:id]}")
+  @posts  = []
+
+  results.each do |p|
+    @posts << @sdb.get_attributes(@domain, p)
+  end
+
+  erb :home
 end
 
 __END__
@@ -44,6 +55,10 @@ __END__
 </html>
 
 @@ home
+
+<% if @more %>
+<h3>  <a href="/page/<%= @more %>">more</a></h3>
+<% end %>
 
 <% @posts.each do |p| %>
   <h2><%= p['title'] %></h2>
